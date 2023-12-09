@@ -26,8 +26,6 @@ public class PartOne
             .ToArray()
             .ToMultiDimensional();
     
-
-
     private static Number? IdentifyNumber(char[,] matrix ,int column, int row)
     {
         matrix.ThrowIfOutOfBounds(column, row);
@@ -53,21 +51,6 @@ public class PartOne
         return new(value, column, row, length);
     }
 
-
-    public static void FilterSymbols()
-    {
-        var path = Path();
-
-        var text = File.ReadAllText(path);
-
-        var symbols = text.Where(character => character is not '.' && !char.IsDigit(character)).ToHashSet();
-
-        foreach (var symbol in symbols)
-        {
-            Console.WriteLine(symbol);
-        }
-    }
-
     public static IEnumerable<Number> IdentifyNumbers(char[,] input)
     {
         var columns = input.GetLength(0);
@@ -90,70 +73,25 @@ public class PartOne
         }
     }
     
-
     public static int Solve()
     {
         var path = Path();
-
         var input = ParseInput(path);
-
-        var numbers = IdentifyNumbers(input);
-        
-        return numbers
-            .Where(number =>
-            {
-                var success = input.CheckHitbox(
-                    number.Column,
-                    number.Row,
-                    number.Lenght,
-                    IsSymbol);
-                
-                if (success)
-                {
-                    Console.Write(number);
-                    Console.WriteLine();
-                }
-
-                return success;
-            })
+        return IdentifyNumbers(input)
+            .Where(number => input.CheckHitbox(number.Column, number.Row, number.Lenght, IsSymbol))
             .Select(number => number.Value)
             .Sum();
     }
 
-    // private static bool IsSymbol(char character) =>
-    //     character 
-    //         is '-'
-    //         or '&'
-    //         or '/'
-    //         or '*'
-    //         or '@'
-    //         or '#'
-    //         or '%'
-    //         or '+'
-    //         or '$'
-    //         or '=';
-
     private static bool IsSymbol(char character) => character is not '.' && !char.IsDigit(character) && character is not ' ' && character is not '\r' && character is not '\n';
-
-    public static void Log(string template, params object[] values)
-    {
-        var index = 0;
-        foreach (var value in values)
-        {
-            template = template.Replace("{" + index + "}", value.ToString());
-        }
-        
-        Console.WriteLine(template);
-    }
-    
     
 }
-
 
 public record Number(int Value, int Column, int Row, int Lenght) : Item<int>(Value, Column, Row);
 
 public static partial class Extensions
 {
+    
     public static T[,] ToMultiDimensional<T>(this T[][] @this)
     {
         var rows = @this[0].Length;
@@ -176,8 +114,7 @@ public static partial class Extensions
 
         return result;
     }
-
-
+    
     public static void ThrowIfOutOfBounds<T>(this T[,] @this, int column, int row)
     {
         if (@this.IsInBounds(column, row))
@@ -212,11 +149,8 @@ public static partial class Extensions
                 {
                     continue;
                 }
-
-                Console.Write($"{item} -> ");
                 
                 return true;
-
             }
         }
 

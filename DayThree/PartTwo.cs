@@ -7,7 +7,7 @@ public record Item<T>(T Value, int Column, int Row);
 
 public record Symbol(char Value, int Column, int Row) : Item<char>(Value, Column, Row);
 
-public class PartOneSolution2
+public class PartTwo
 {
     private static string Path()
     {
@@ -22,9 +22,11 @@ public class PartOneSolution2
     {
         var path = Path();
         var input = Parse(path);
-        var symbols = Symbols(input).ToArray();
-        var numbers = symbols.SelectMany(symbol => GetAssociatedNumbers(symbol, input).ToHashSet().ToArray());
-        return numbers.Sum();
+        return Symbols(input)
+            .Select(symbol => GetAssociatedNumbers(symbol, input).ToList())
+            .Where(numbers => numbers.Count is 2)
+            .Select(numbers => numbers[0].Value * numbers[1].Value)
+            .Sum();
     }
 
     private static bool IsSymbol(char character) =>
@@ -43,10 +45,12 @@ public class PartOneSolution2
                 return new Symbol(tuple.character, column, row);
             });
 
-    private static IEnumerable<int> GetAssociatedNumbers(Item<char> symbol, char[,] matrix) =>
+    private static IEnumerable<Number> GetAssociatedNumbers(Item<char> symbol, char[,] matrix) =>
         matrix
             .FindInHitbox(symbol.Column, symbol.Row, char.IsDigit)
-            .Select(item => ScanNumber(matrix, item.Column, item.Row));
+            .Select(item => ScanNumber(matrix, item.Column, item.Row))
+            .Distinct()
+            .Where(number => number is not null)!;
 
     private static char[,] Parse(string path) =>
         File.ReadLines(path)
@@ -54,60 +58,50 @@ public class PartOneSolution2
             .ToArray()
             .ToMultiDimensional();
 
-    private static int ScanNumber(char[,] matrix, int column, int row)
+    private static Number? ScanNumber(char[,] matrix, int column, int row)
     {
         var item = matrix[column, row];
 
         if (!char.IsDigit(item))
         {
-            return 0;
+            return null;
         }
-
-        var number = Int32.Parse("" + item);
+        
+        var digits = Enumerable.Empty<char>()
+            .Append(matrix[column, row]);
         
         //scan left
-        var index = row - 1;
-        while (matrix.IsInBounds(column, index) 
-            && matrix[column, index] is var newItem 
+        var indexLeft = row - 1;
+        while (matrix.IsInBounds(column, indexLeft) 
+            && matrix[column, indexLeft] is var newItem 
             && char.IsDigit(newItem))
         {
-            var newNumber = Int32.Parse("" + newItem);
-            var orderOfMagnitude = number.OrderOfMagnitude();
-            var scaledNewNumber = newNumber * ((int)(Math.Pow(10, orderOfMagnitude + 1)));
-            number = scaledNewNumber + number;
-            index--;
+            digits = digits.Prepend(newItem);
+            indexLeft--;
         }
         
         //scan right
-        index = row + 1;
-        while (matrix.IsInBounds(column, index)
-            && matrix[column, index] is var newItem
+        var indexRight = row + 1;
+        while (matrix.IsInBounds(column, indexRight)
+            && matrix[column, indexRight] is var newItem
             && char.IsDigit(newItem))
         {
-            
-            var newNumber = Int32.Parse("" + newItem);
-            number = (number * 10) + newNumber;
-
-            index++;
+            digits = digits.Append(newItem);
+            indexRight++;
         }
 
-        return number;
+        var number = digits
+            .Select(digit => int.Parse("" + digit))
+            .Aggregate(0, (accumulator, digit) => (accumulator * 10) + digit);
+        
+        var length = indexRight - indexLeft - 1;
+        return new Number(number, column, indexLeft + 1, length);
     }
 
 }
 
 public static partial class Extensions
 {
-    public static int OrderOfMagnitude(this int number) =>
-        number / 10 is var result && result is 0 
-            ? 0 
-            : OrderOfMagnitude(result) + 1;
-    
-    
-    
-    public static bool CheckHitbox<T>(this T[,] @this, int column, int row, Predicate<T> condition) =>
-        @this.CheckHitbox(column, row, 1, condition);
-
     public static IEnumerable<T> ToEnumerable<T>(this T[,] @this)
     {
         foreach (var entry in @this)
