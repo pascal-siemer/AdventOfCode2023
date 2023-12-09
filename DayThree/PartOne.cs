@@ -200,7 +200,7 @@ public static partial class Extensions
         var hitboxStartColumn = Math.Max(column - 1, 0);
         var hitboxEndColumn = Math.Min(column + 1, matrix.GetLength(0) - 1);
         var hitboxStartRow = Math.Max(row - 1, 0);
-        var hitboxEndRow = Math.Min(row + length + 1, matrix.GetLength(1) - 1);
+        var hitboxEndRow = Math.Min(row + (length - 1) + 1, matrix.GetLength(1) - 1);
 
         for (var columnIndex = hitboxStartColumn; columnIndex <= hitboxEndColumn; columnIndex++)
         {
